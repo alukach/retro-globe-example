@@ -1,13 +1,18 @@
 "use client";
 import { useState } from "react";
 import { DotMatrixCanvas } from "@/components/DotMatrixCanvas";
+import { DitheredCanvas } from "@/components/DitheredCanvas";
 import { SliderControl } from "@/components/SliderControl";
+
+type RenderMode = "dots" | "dithered";
 
 export default function Page() {
   const [imageSrc, setImageSrc] = useState("/earth.png");
   const [size, setSize] = useState(300);
   const [cellSize, setCellSize] = useState(4);
   const [maxDotRadius, setMaxDotRadius] = useState(2.8);
+  const [threshold, setThreshold] = useState(0.5);
+  const [renderMode, setRenderMode] = useState<RenderMode>("dots");
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -22,18 +27,55 @@ export default function Page() {
         </div>
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-          <DotMatrixCanvas
-            src={imageSrc}
-            size={size}
-            cellSize={cellSize}
-            maxDotRadius={maxDotRadius}
-          />
+          {renderMode === "dots" ? (
+            <DotMatrixCanvas
+              src={imageSrc}
+              size={size}
+              cellSize={cellSize}
+              maxDotRadius={maxDotRadius}
+            />
+          ) : (
+            <DitheredCanvas
+              src={imageSrc}
+              size={size}
+              cellSize={cellSize}
+              threshold={threshold}
+            />
+          )}
         </div>
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
           <h2 className="text-xl font-semibold text-white mb-6">Controls</h2>
 
           <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-300">
+                Render Mode
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRenderMode("dots")}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    renderMode === "dots"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+                >
+                  Variable Dots
+                </button>
+                <button
+                  onClick={() => setRenderMode("dithered")}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    renderMode === "dithered"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+                >
+                  Dithered Pixels
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="imageSrc"
@@ -77,16 +119,29 @@ export default function Page() {
                 color="green"
               />
 
-              <SliderControl
-                label="Max Dot Radius"
-                value={maxDotRadius}
-                onChange={setMaxDotRadius}
-                min={0.5}
-                max={10}
-                step={0.1}
-                color="purple"
-                decimals={1}
-              />
+              {renderMode === "dots" ? (
+                <SliderControl
+                  label="Max Dot Radius"
+                  value={maxDotRadius}
+                  onChange={setMaxDotRadius}
+                  min={0.5}
+                  max={10}
+                  step={0.1}
+                  color="purple"
+                  decimals={1}
+                />
+              ) : (
+                <SliderControl
+                  label="Dither Threshold"
+                  value={threshold}
+                  onChange={setThreshold}
+                  min={0.1}
+                  max={1.5}
+                  step={0.05}
+                  color="purple"
+                  decimals={2}
+                />
+              )}
             </div>
 
             <div className="pt-4 border-t border-white/10">
@@ -96,6 +151,7 @@ export default function Page() {
                   setSize(300);
                   setCellSize(4);
                   setMaxDotRadius(2.8);
+                  setThreshold(0.5);
                 }}
                 className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-colors"
               >
