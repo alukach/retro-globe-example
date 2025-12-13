@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { DotMatrixCanvas } from "@/components/DotMatrixCanvas";
 import { DitheredCanvas } from "@/components/DitheredCanvas";
 import { SliderControl } from "@/components/SliderControl";
@@ -7,12 +8,62 @@ import { SliderControl } from "@/components/SliderControl";
 type RenderMode = "dots" | "dithered";
 
 export default function Page() {
-  const [imageSrc, setImageSrc] = useState("/earth.png");
-  const [size, setSize] = useState(300);
-  const [cellSize, setCellSize] = useState(4);
-  const [maxDotRadius, setMaxDotRadius] = useState(2.8);
-  const [threshold, setThreshold] = useState(0.5);
-  const [renderMode, setRenderMode] = useState<RenderMode>("dots");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [imageSrc, setImageSrc] = useState(
+    searchParams.get("src") || "/earth.png"
+  );
+  const [size, setSize] = useState(
+    parseInt(searchParams.get("size") || "300")
+  );
+  const [cellSize, setCellSize] = useState(
+    parseInt(searchParams.get("cellSize") || "4")
+  );
+  const [maxDotRadius, setMaxDotRadius] = useState(
+    parseFloat(searchParams.get("maxDotRadius") || "2.8")
+  );
+  const [threshold, setThreshold] = useState(
+    parseFloat(searchParams.get("threshold") || "0.5")
+  );
+  const [renderMode, setRenderMode] = useState<RenderMode>(
+    (searchParams.get("mode") as RenderMode) || "dots"
+  );
+
+  // Update URL when params change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("src", imageSrc);
+    params.set("size", size.toString());
+    params.set("cellSize", cellSize.toString());
+    params.set("maxDotRadius", maxDotRadius.toString());
+    params.set("threshold", threshold.toString());
+    params.set("mode", renderMode);
+
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [imageSrc, size, cellSize, maxDotRadius, threshold, renderMode, router]);
+
+  const copyCurrentLink = async () => {
+    const url = window.location.href;
+    await navigator.clipboard.writeText(url);
+    alert("Link copied to clipboard!");
+  };
+
+  const loadPreset = (preset: {
+    src: string;
+    size: number;
+    cellSize: number;
+    maxDotRadius: number;
+    threshold: number;
+    mode: RenderMode;
+  }) => {
+    setImageSrc(preset.src);
+    setSize(preset.size);
+    setCellSize(preset.cellSize);
+    setMaxDotRadius(preset.maxDotRadius);
+    setThreshold(preset.threshold);
+    setRenderMode(preset.mode);
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -144,19 +195,96 @@ export default function Page() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-white/10">
-              <button
-                onClick={() => {
-                  setImageSrc("/earth.png");
-                  setSize(300);
-                  setCellSize(4);
-                  setMaxDotRadius(2.8);
-                  setThreshold(0.5);
-                }}
-                className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-colors"
-              >
-                Reset to Defaults
-              </button>
+            <div className="pt-4 border-t border-white/10 space-y-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setImageSrc("/earth.png");
+                    setSize(300);
+                    setCellSize(4);
+                    setMaxDotRadius(2.8);
+                    setThreshold(0.5);
+                    setRenderMode("dots");
+                  }}
+                  className="flex-1 px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-colors"
+                >
+                  Reset to Defaults
+                </button>
+                <button
+                  onClick={copyCurrentLink}
+                  className="px-6 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg text-blue-300 text-sm font-medium transition-colors"
+                >
+                  Copy Link
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-300">
+                  Quick Presets
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() =>
+                      loadPreset({
+                        src: "https://upload.wikimedia.org/wikipedia/commons/7/7f/Rotating_earth_animated_transparent.gif",
+                        size: 400,
+                        cellSize: 6,
+                        maxDotRadius: 3,
+                        threshold: 0.5,
+                        mode: "dots",
+                      })
+                    }
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
+                  >
+                    Rotating Earth (Dots)
+                  </button>
+                  <button
+                    onClick={() =>
+                      loadPreset({
+                        src: "https://upload.wikimedia.org/wikipedia/commons/7/7f/Rotating_earth_animated_transparent.gif",
+                        size: 400,
+                        cellSize: 4,
+                        maxDotRadius: 2.8,
+                        threshold: 0.7,
+                        mode: "dithered",
+                      })
+                    }
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
+                  >
+                    Rotating Earth (Dithered)
+                  </button>
+                  <button
+                    onClick={() =>
+                      loadPreset({
+                        src: "/earth.png",
+                        size: 300,
+                        cellSize: 2,
+                        maxDotRadius: 1.5,
+                        threshold: 0.5,
+                        mode: "dots",
+                      })
+                    }
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
+                  >
+                    Fine Detail
+                  </button>
+                  <button
+                    onClick={() =>
+                      loadPreset({
+                        src: "/earth.png",
+                        size: 500,
+                        cellSize: 12,
+                        maxDotRadius: 6,
+                        threshold: 0.4,
+                        mode: "dithered",
+                      })
+                    }
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
+                  >
+                    Chunky Pixels
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

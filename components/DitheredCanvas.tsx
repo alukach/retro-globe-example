@@ -1,7 +1,7 @@
 // components/DitheredCanvas.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCanvasRenderer } from "./useCanvasRenderer";
 
 type Props = {
   src: string;
@@ -24,53 +24,21 @@ export function DitheredCanvas({
   cellSize = 6,
   threshold = 0.5,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useCanvasRenderer({
+    src,
+    size,
+    cellSize,
+    processPixel: (x, y, lum, ctx, cellSize) => {
+      const cellX = Math.floor(x / cellSize) % 4;
+      const cellY = Math.floor(y / cellSize) % 4;
+      const bayerThreshold = (BAYER_MATRIX[cellY][cellX] / 16) * threshold;
 
-  useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    const img = new Image();
-
-    img.src = src;
-    img.crossOrigin = "anonymous";
-
-    img.onload = () => {
-      canvas.width = size;
-      canvas.height = size;
-
-      // Draw image scaled
-      ctx.drawImage(img, 0, 0, size, size);
-      const imageData = ctx.getImageData(0, 0, size, size).data;
-
-      // Clear canvas
-      ctx.clearRect(0, 0, size, size);
-
-      ctx.fillStyle = "#fff";
-
-      for (let y = 0; y < size; y += cellSize) {
-        for (let x = 0; x < size; x += cellSize) {
-          const i = (y * size + x) * 4;
-
-          const r = imageData[i];
-          const g = imageData[i + 1];
-          const b = imageData[i + 2];
-
-          // Luminance
-          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-          // Apply Bayer matrix threshold
-          const cellX = Math.floor(x / cellSize) % 4;
-          const cellY = Math.floor(y / cellSize) % 4;
-          const bayerThreshold = (BAYER_MATRIX[cellY][cellX] / 16) * threshold;
-
-          // Draw white square if luminance exceeds threshold
-          if (lum > bayerThreshold) {
-            ctx.fillRect(x, y, cellSize, cellSize);
-          }
-        }
+      if (lum > bayerThreshold) {
+        ctx.fillRect(x, y, cellSize, cellSize);
       }
-    };
-  }, [src, size, cellSize, threshold]);
+    },
+    dependencies: [threshold],
+  });
 
   return (
     <div className="relative">
