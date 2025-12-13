@@ -35,8 +35,15 @@ export function useCanvasRenderer({
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
 
-    canvas.width = size;
-    canvas.height = size;
+    // Use device pixel ratio for high-DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    const displaySize = size;
+    const renderSize = size * dpr;
+
+    canvas.width = renderSize;
+    canvas.height = renderSize;
+    canvas.style.width = `${displaySize}px`;
+    canvas.style.height = `${displaySize}px`;
 
     const isVideo = src.match(/\.(mp4|webm|ogg)$/i);
 
@@ -47,8 +54,8 @@ export function useCanvasRenderer({
       const sourceCanvas = sourceCanvasRef.current;
       const sourceCtx = sourceCanvas.getContext("2d")!;
 
-      sourceCanvas.width = size;
-      sourceCanvas.height = size;
+      sourceCanvas.width = renderSize;
+      sourceCanvas.height = renderSize;
 
       // Calculate dimensions for center-crop (cover mode)
       const sourceWidth =
@@ -66,26 +73,29 @@ export function useCanvasRenderer({
       let drawWidth, drawHeight, offsetX, offsetY;
 
       if (sourceAspect > canvasAspect) {
-        drawHeight = size;
-        drawWidth = size * sourceAspect;
-        offsetX = -(drawWidth - size) / 2;
+        drawHeight = renderSize;
+        drawWidth = renderSize * sourceAspect;
+        offsetX = -(drawWidth - renderSize) / 2;
         offsetY = 0;
       } else {
-        drawWidth = size;
-        drawHeight = size / sourceAspect;
+        drawWidth = renderSize;
+        drawHeight = renderSize / sourceAspect;
         offsetX = 0;
-        offsetY = -(drawHeight - size) / 2;
+        offsetY = -(drawHeight - renderSize) / 2;
       }
 
       sourceCtx.drawImage(sourceElement, offsetX, offsetY, drawWidth, drawHeight);
-      const imageData = sourceCtx.getImageData(0, 0, size, size).data;
+      const imageData = sourceCtx.getImageData(0, 0, renderSize, renderSize).data;
 
-      ctx.clearRect(0, 0, size, size);
+      ctx.clearRect(0, 0, renderSize, renderSize);
       ctx.fillStyle = "#fff";
 
-      for (let y = 0; y < size; y += cellSize) {
-        for (let x = 0; x < size; x += cellSize) {
-          const i = (y * size + x) * 4;
+      // Scale cellSize for high-DPI rendering
+      const scaledCellSize = cellSize * dpr;
+
+      for (let y = 0; y < renderSize; y += scaledCellSize) {
+        for (let x = 0; x < renderSize; x += scaledCellSize) {
+          const i = (y * renderSize + x) * 4;
           const r = imageData[i];
           const g = imageData[i + 1];
           const b = imageData[i + 2];
@@ -101,7 +111,7 @@ export function useCanvasRenderer({
           // Clamp to valid range
           lum = Math.max(0, Math.min(1, lum));
 
-          processPixel(x, y, lum, ctx, cellSize);
+          processPixel(x, y, lum, ctx, scaledCellSize);
         }
       }
     };

@@ -185,6 +185,7 @@ export default function Page() {
                   max={20}
                   step={1}
                   color="green"
+                  unit="px"
                 />
 
                 {renderMode === "dots" ? (

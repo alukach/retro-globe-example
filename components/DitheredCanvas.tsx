@@ -34,13 +34,13 @@ export function DitheredCanvas({
     cellSize,
     contrast,
     brightness,
-    processPixel: (x, y, lum, ctx, cellSize) => {
-      const cellX = Math.floor(x / cellSize) % 4;
-      const cellY = Math.floor(y / cellSize) % 4;
+    processPixel: (x, y, lum, ctx, scaledCellSize) => {
+      const cellX = Math.floor(x / scaledCellSize) % 4;
+      const cellY = Math.floor(y / scaledCellSize) % 4;
       const bayerThreshold = (BAYER_MATRIX[cellY][cellX] / 16) * threshold;
 
       if (lum > bayerThreshold) {
-        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.fillRect(x, y, scaledCellSize, scaledCellSize);
       }
     },
     dependencies: [threshold],

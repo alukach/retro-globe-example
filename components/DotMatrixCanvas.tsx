@@ -26,11 +26,12 @@ export function DotMatrixCanvas({
     cellSize,
     contrast,
     brightness,
-    processPixel: (x, y, lum, ctx, cellSize) => {
-      const radius = lum * maxDotRadius;
+    processPixel: (x, y, lum, ctx, scaledCellSize) => {
+      const dpr = window.devicePixelRatio || 1;
+      const radius = lum * maxDotRadius * dpr;
       if (radius > 0.2) {
         ctx.beginPath();
-        ctx.arc(x + cellSize / 2, y + cellSize / 2, radius, 0, Math.PI * 2);
+        ctx.arc(x + scaledCellSize / 2, y + scaledCellSize / 2, radius, 0, Math.PI * 2);
         ctx.fill();
       }
     },
