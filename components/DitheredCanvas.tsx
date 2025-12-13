@@ -8,6 +8,8 @@ type Props = {
   size?: number;
   cellSize?: number;
   threshold?: number;
+  contrast?: number;
+  brightness?: number;
 };
 
 // 4x4 Bayer matrix for ordered dithering
@@ -23,11 +25,15 @@ export function DitheredCanvas({
   size = 600,
   cellSize = 6,
   threshold = 0.5,
+  contrast = 1.0,
+  brightness = 0,
 }: Props) {
   const canvasRef = useCanvasRenderer({
     src,
     size,
     cellSize,
+    contrast,
+    brightness,
     processPixel: (x, y, lum, ctx, cellSize) => {
       const cellX = Math.floor(x / cellSize) % 4;
       const cellY = Math.floor(y / cellSize) % 4;

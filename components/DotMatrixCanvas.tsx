@@ -8,6 +8,8 @@ type Props = {
   size?: number;
   cellSize?: number;
   maxDotRadius?: number;
+  contrast?: number;
+  brightness?: number;
 };
 
 export function DotMatrixCanvas({
@@ -15,11 +17,15 @@ export function DotMatrixCanvas({
   size = 600,
   cellSize = 6,
   maxDotRadius = 2.6,
+  contrast = 1.0,
+  brightness = 0,
 }: Props) {
   const canvasRef = useCanvasRenderer({
     src,
     size,
     cellSize,
+    contrast,
+    brightness,
     processPixel: (x, y, lum, ctx, cellSize) => {
       const radius = lum * maxDotRadius;
       if (radius > 0.2) {

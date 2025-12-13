@@ -13,7 +13,9 @@ interface UseCanvasRendererProps {
   size: number;
   cellSize: number;
   processPixel: ProcessPixelFn;
-  dependencies: any[];
+  dependencies: React.DependencyList;
+  contrast?: number; // 1.0 = normal, <1 = less contrast, >1 = more contrast
+  brightness?: number; // 0 = normal, negative = darker, positive = brighter
 }
 
 export function useCanvasRenderer({
@@ -22,6 +24,8 @@ export function useCanvasRenderer({
   cellSize,
   processPixel,
   dependencies,
+  contrast = 1.0,
+  brightness = 0,
 }: UseCanvasRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sourceCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -87,7 +91,15 @@ export function useCanvasRenderer({
           const b = imageData[i + 2];
 
           // Calculate luminance
-          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          let lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+          // Apply contrast and brightness adjustments
+          // Contrast: pivot around 0.5
+          lum = (lum - 0.5) * contrast + 0.5;
+          // Brightness: shift the entire range
+          lum = lum + brightness;
+          // Clamp to valid range
+          lum = Math.max(0, Math.min(1, lum));
 
           processPixel(x, y, lum, ctx, cellSize);
         }
@@ -152,7 +164,7 @@ export function useCanvasRenderer({
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, size, cellSize, ...dependencies]);
+  }, [src, size, cellSize, contrast, brightness, ...dependencies]);
 
   return canvasRef;
 }

@@ -26,6 +26,12 @@ export default function Page() {
   const [threshold, setThreshold] = useState(
     parseFloat(searchParams.get("threshold") || "0.5")
   );
+  const [contrast, setContrast] = useState(
+    parseFloat(searchParams.get("contrast") || "1.0")
+  );
+  const [brightness, setBrightness] = useState(
+    parseFloat(searchParams.get("brightness") || "0")
+  );
   const [renderMode, setRenderMode] = useState<RenderMode>(
     (searchParams.get("mode") as RenderMode) || "dots"
   );
@@ -38,10 +44,12 @@ export default function Page() {
     params.set("cellSize", cellSize.toString());
     params.set("maxDotRadius", maxDotRadius.toString());
     params.set("threshold", threshold.toString());
+    params.set("contrast", contrast.toString());
+    params.set("brightness", brightness.toString());
     params.set("mode", renderMode);
 
     router.replace(`?${params.toString()}`, { scroll: false });
-  }, [imageSrc, size, cellSize, maxDotRadius, threshold, renderMode, router]);
+  }, [imageSrc, size, cellSize, maxDotRadius, threshold, contrast, brightness, renderMode, router]);
 
   const copyCurrentLink = async () => {
     const url = window.location.href;
@@ -55,6 +63,8 @@ export default function Page() {
     cellSize: number;
     maxDotRadius: number;
     threshold: number;
+    contrast: number;
+    brightness: number;
     mode: RenderMode;
   }) => {
     setImageSrc(preset.src);
@@ -62,6 +72,8 @@ export default function Page() {
     setCellSize(preset.cellSize);
     setMaxDotRadius(preset.maxDotRadius);
     setThreshold(preset.threshold);
+    setContrast(preset.contrast);
+    setBrightness(preset.brightness);
     setRenderMode(preset.mode);
   };
 
@@ -84,6 +96,8 @@ export default function Page() {
               size={size}
               cellSize={cellSize}
               maxDotRadius={maxDotRadius}
+              contrast={contrast}
+              brightness={brightness}
             />
           ) : (
             <DitheredCanvas
@@ -91,6 +105,8 @@ export default function Page() {
               size={size}
               cellSize={cellSize}
               threshold={threshold}
+              contrast={contrast}
+              brightness={brightness}
             />
           )}
         </div>
@@ -148,51 +164,77 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SliderControl
-                label="Canvas Size"
-                value={size}
-                onChange={setSize}
-                min={100}
-                max={800}
-                step={10}
-                color="blue"
-                unit="px"
-              />
-
-              <SliderControl
-                label="Cell Size"
-                value={cellSize}
-                onChange={setCellSize}
-                min={1}
-                max={20}
-                step={1}
-                color="green"
-              />
-
-              {renderMode === "dots" ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SliderControl
-                  label="Max Dot Radius"
-                  value={maxDotRadius}
-                  onChange={setMaxDotRadius}
-                  min={0.5}
-                  max={10}
+                  label="Canvas Size"
+                  value={size}
+                  onChange={setSize}
+                  min={100}
+                  max={800}
+                  step={10}
+                  color="blue"
+                  unit="px"
+                />
+
+                <SliderControl
+                  label="Cell Size"
+                  value={cellSize}
+                  onChange={setCellSize}
+                  min={1}
+                  max={20}
+                  step={1}
+                  color="green"
+                />
+
+                {renderMode === "dots" ? (
+                  <SliderControl
+                    label="Max Dot Radius"
+                    value={maxDotRadius}
+                    onChange={setMaxDotRadius}
+                    min={0.5}
+                    max={10}
+                    step={0.1}
+                    color="purple"
+                    decimals={1}
+                  />
+                ) : (
+                  <SliderControl
+                    label="Dither Threshold"
+                    value={threshold}
+                    onChange={setThreshold}
+                    min={0.1}
+                    max={1.5}
+                    step={0.05}
+                    color="purple"
+                    decimals={2}
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SliderControl
+                  label="Contrast"
+                  value={contrast}
+                  onChange={setContrast}
+                  min={0.1}
+                  max={3}
                   step={0.1}
-                  color="purple"
+                  color="blue"
                   decimals={1}
                 />
-              ) : (
+
                 <SliderControl
-                  label="Dither Threshold"
-                  value={threshold}
-                  onChange={setThreshold}
-                  min={0.1}
-                  max={1.5}
+                  label="Brightness"
+                  value={brightness}
+                  onChange={setBrightness}
+                  min={-0.5}
+                  max={0.5}
                   step={0.05}
-                  color="purple"
+                  color="green"
                   decimals={2}
                 />
-              )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-white/10 space-y-4">
@@ -204,6 +246,8 @@ export default function Page() {
                     setCellSize(4);
                     setMaxDotRadius(2.8);
                     setThreshold(0.5);
+                    setContrast(1.0);
+                    setBrightness(0);
                     setRenderMode("dots");
                   }}
                   className="flex-1 px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-colors"
@@ -231,6 +275,8 @@ export default function Page() {
                         cellSize: 6,
                         maxDotRadius: 3,
                         threshold: 0.5,
+                        contrast: 1.0,
+                        brightness: 0,
                         mode: "dots",
                       })
                     }
@@ -246,12 +292,14 @@ export default function Page() {
                         cellSize: 4,
                         maxDotRadius: 2.8,
                         threshold: 0.7,
+                        contrast: 0.6,
+                        brightness: -0.1,
                         mode: "dithered",
                       })
                     }
                     className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
                   >
-                    Rotating Earth (Dithered)
+                    Rotating Earth (Low Contrast)
                   </button>
                   <button
                     onClick={() =>
@@ -261,6 +309,8 @@ export default function Page() {
                         cellSize: 2,
                         maxDotRadius: 1.5,
                         threshold: 0.5,
+                        contrast: 1.0,
+                        brightness: 0,
                         mode: "dots",
                       })
                     }
@@ -276,12 +326,14 @@ export default function Page() {
                         cellSize: 12,
                         maxDotRadius: 6,
                         threshold: 0.4,
+                        contrast: 1.8,
+                        brightness: 0.1,
                         mode: "dithered",
                       })
                     }
                     className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 text-xs font-medium transition-colors text-left"
                   >
-                    Chunky Pixels
+                    High Contrast
                   </button>
                 </div>
               </div>
